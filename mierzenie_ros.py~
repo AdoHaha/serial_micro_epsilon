@@ -27,8 +27,9 @@ def signal_handler(signal, frame): ## closing on end
         sys.exit(0)
 signal.signal(signal.SIGINT, signal_handler)
 
-errors={16370:"no object detected",16372: "too close to sensor",16374: "too far from sensor",16376: "object cannot be evaluated", 16378: "external laser off"} ## error detection
-
+errors={16370:"no object detected",16372: "too close to sensor",16374: "too far from sensor", \
+16376: "object cannot be evaluated", 16378: "external laser off",16256: "seems like max reading"} ## error detection
+rospy.init_node('micro_epsilon', anonymous=True)
 distance_publisher =rospy.Publisher('laser_distance',Float32, queue_size=10)
 
 while not rospy.is_shutdown():
@@ -37,23 +38,27 @@ while not rospy.is_shutdown():
             komunikat.frombytes(c)
             
             try:
-                if komunikat[0]:
-                    d =ser.read(1)
-                    komunikat.frombytes(d)
-                    
-                    
-                    f=bitarray([False,False],endian='big')
+                if len(komunikat)==8 and komunikat[0]:
+                        d =ser.read(1)
+                        
+                        komunikat.frombytes(d)
+                        print komunikat
+                        
+                        f=bitarray([False,False],endian='big')
 
-                    f=f+komunikat[1:8]+komunikat[9:]
-
-                    digital_output=struct.unpack('>H',f.tobytes())[0]
-                    #print digital_output
-                    if digital_output not in errors:
-                        final=(digital_output*1.02/16368.0-0.01)*200
-                        #print "wyliczone",final
-                        distance_publisher.pub(final)
-                    else:
-                        print errors[digital_output]
+                        f=f+komunikat[1:8]+komunikat[9:]
+                        if len(komunikat)==16 and not komunikat[8]:
+                            digital_output=struct.unpack('>H',f.tobytes())[0]
+                            #print digital_output
+                            if digital_output not in errors:
+                                final=(digital_output*1.02/16368.0-0.01)*200
+                                print digital_output
+                                #print "wyliczone",final
+                                distance_publisher.publish(final)
+                            else:
+                                print errors[digital_output]
+                        else:
+                            print "communication error"
             except:
                 print "no data to show"
                 

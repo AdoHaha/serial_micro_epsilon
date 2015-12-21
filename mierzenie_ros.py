@@ -39,26 +39,26 @@ while not rospy.is_shutdown():
             
             try:
                 if len(komunikat)==8 and komunikat[0]:
-                        d =ser.read(1)
+                        for d in ser.read():
                         
-                        komunikat.frombytes(d)
-                        
-                        
-                        f=bitarray([False,False],endian='big')
+                            komunikat.frombytes(d)
+                            
+                            
+                            f=bitarray([False,False],endian='big')
 
-                        f=f+komunikat[1:8]+komunikat[9:]
-                        if len(komunikat)==16 and not komunikat[8]:
-                            digital_output=struct.unpack('>H',f.tobytes())[0]
-                            #print digital_output
-                            if digital_output not in errors:
-                                final=(digital_output*1.02/16368.0-0.01)*200
-                                print digital_output
-                                #print "wyliczone",final
-                                distance_publisher.publish(final)
+                            f=f+komunikat[1:8]+komunikat[9:]
+                            if len(komunikat)==16 and not komunikat[8]:
+                                digital_output=struct.unpack('>H',f.tobytes())[0]
+                                #print digital_output
+                                if digital_output not in errors:
+                                    final=(digital_output*1.02/16368.0-0.01)*200
+                                    print digital_output
+                                    #print "wyliczone",final
+                                    distance_publisher.publish(final)
+                                else:
+                                    print errors[digital_output]
                             else:
-                                print errors[digital_output]
-                        else:
-                            print "communication error"
+                                print "communication error"
             except:
                 print "no data to show"
                 
